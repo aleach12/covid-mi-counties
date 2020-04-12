@@ -1,0 +1,92 @@
+library(tidyverse)
+library(tigris)
+library(ggplot2)
+library(sf)
+library(tmap)
+options(scipen = 999)
+
+tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
+        rename(., "geography" = 1, "population_2018" = "2018") %>%
+          filter(geography != "Michigan") %>%
+          select(geography, population_2018) %>%
+            mutate(geography = str_replace_all(geography, c(" County, Michigan" = "", "Wayne" = "Balance_of_Wayne")),
+                   geography = str_sub(geography, 2, -1),
+                   population_2018 = ifelse(geography == "Balance_of_Wayne", population_2018 - 672662, population_2018)) %>%
+            add_row(., geography = "Detroit City", population_2018 = 672662) %>%
+        left_join(., readxl::read_xlsx("inputs/covid19.xlsx", sheet = "Sheet 1", skip = 2) %>%
+                      rename_all(tolower) %>%
+                        replace(., is.na(.), 0) %>%
+                          rename(., "geography" = "county") %>%
+                            mutate(geography = ifelse(geography == "Wayne", "Balance_of_Wayne", geography)),
+                  by = "geography") %>%
+  complete(date, nesting(geography, population_2018), 
+           fill = list(cases = 0, `reported deaths` = 0)) %>%
+  filter(!is.na(date)) %>%
+    left_join(., tigris::counties("MI", cb = TRUE, class = "sf") %>%
+                rename_all(tolower) %>%
+                rename(., "geography" = name) %>%
+                mutate(geography = ifelse(geography == "Wayne", "Balance_of_Wayne", geography)) %>%
+                select(geography, aland),
+              by = "geography") %>%
+  mutate(aland = ifelse(geography == "Detroit City", 359279682,
+                        ifelse(geography == "Balance_of_Wayne", aland - 359279682, aland)),
+         cases_per_thousand_residents = ifelse(cases == 0, 0, cases / (population_2018 / 1000)),
+         deaths_per_thousand_residents = ifelse(`reported deaths` == 0, 0, `reported deaths` / (population_2018 / 1000)),
+         sq_km = aland / 1000000,
+         residents_per_km2 = population_2018 / sq_km,
+         death_rate = `reported deaths` / population_2018) %>%
+  st_sf(.) 
+
+
+cases <- ggplot(tmp, aes(x = date, y = cases_per_thousand_residents)) +
+  facet_wrap("geography", nrow = 7) +
+    geom_line(col = "blue", size = 1.1) +
+      theme(
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        panel.background = element_blank(),
+        panel.grid.major.y = element_line(color = "grey80", linetype = "solid", size = 0.4),
+        panel.grid.major.x = element_blank(),
+        strip.background = element_rect(color = "black", fill = "white", size = 0.8))
+
+ggsave(cases, filename = "graphics/covid-cases.jpeg", width = 16, height = 10, dpi = 600)
+
+deaths <- ggplot(tmp, aes(x = date, y = deaths_per_thousand_residents)) +
+  facet_wrap("geography", nrow = 7) +
+  geom_line(col = "blue", size = 1.1) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5),
+    panel.background = element_blank(),
+    panel.grid.major.y = element_line(color = "grey80", linetype = "solid", size = 0.4),
+    panel.grid.major.x = element_blank(),
+    strip.background = element_rect(color = "black", fill = "white", size = 0.8))
+
+ggsave(deaths, filename = "graphics/covid-deaths.jpeg", width = 16, height = 10, dpi = 600)
+
+#########
+## creates a map of covid death rates by county
+county_data <- 
+  tmp %>%
+    filter(date == as.Date("2020-04-09")) %>%
+      mutate(deaths_per_thousand_residents =
+               ifelse(geography == "Balance_of_Wayne",
+                      (`reported deaths`[which(geography == "Detroit City")] +
+                       `reported deaths`[which(geography == "Balance_of_Wayne")]) /
+                        ((population_2018[which(geography == "Detroit City")] +
+                          population_2018[which(geography == "Balance_of_Wayne")])  / 1000),
+                      deaths_per_thousand_residents))
+
+county_map <- 
+  tm_shape(county_data) +
+      tm_fill(col = "deaths_per_thousand_residents", palette = "Blues") +
+  tm_shape(county_data) +
+    tm_borders(col = "grey80") +
+  tm_layout(legend.title.color = "white",
+            main.title = "Covid Deaths Per One Thousand Residents\n Through 4-9-2020",
+            main.title.size = 0.9,
+            main.title.position = "center",
+            frame = FALSE)
+
+tmap_save(county_map, "graphics/county_map.jpeg")           
+  
