@@ -13,14 +13,14 @@ tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
                    geography = str_sub(geography, 2, -1),
                    population_2018 = ifelse(geography == "Balance_of_Wayne", population_2018 - 672662, population_2018)) %>%
             add_row(., geography = "Detroit City", population_2018 = 672662) %>%
-        left_join(., readxl::read_xlsx("inputs/covid19.xlsx", sheet = "Sheet 1", skip = 2) %>%
+        left_join(., read_csv("https://raw.githubusercontent.com/Wilfongjt/wilfongjt-data/master/covid-19/covid19.csv") %>%
                       rename_all(tolower) %>%
                         replace(., is.na(.), 0) %>%
                           rename(., "geography" = "county") %>%
                             mutate(geography = ifelse(geography == "Wayne", "Balance_of_Wayne", geography)),
                   by = "geography") %>%
   complete(date, nesting(geography, population_2018), 
-           fill = list(cases = 0, `reported deaths` = 0)) %>%
+           fill = list(cases = 0, reported_deaths = 0)) %>%
   filter(!is.na(date)) %>%
     left_join(., tigris::counties("MI", cb = TRUE, class = "sf") %>%
                 rename_all(tolower) %>%
@@ -31,10 +31,10 @@ tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
   mutate(aland = ifelse(geography == "Detroit City", 359279682,
                         ifelse(geography == "Balance_of_Wayne", aland - 359279682, aland)),
          cases_per_thousand_residents = ifelse(cases == 0, 0, cases / (population_2018 / 1000)),
-         deaths_per_thousand_residents = ifelse(`reported deaths` == 0, 0, `reported deaths` / (population_2018 / 1000)),
+         deaths_per_thousand_residents = ifelse(reported_deaths == 0, 0, reported_deaths / (population_2018 / 1000)),
          sq_km = aland / 1000000,
          residents_per_km2 = population_2018 / sq_km,
-         death_rate = `reported deaths` / population_2018) %>%
+         death_rate = reported_deaths / population_2018) %>%
   st_sf(.) 
 
 
@@ -68,11 +68,11 @@ ggsave(deaths, filename = "graphics/covid-deaths.jpeg", width = 16, height = 10,
 ## creates a map of covid death rates by county
 county_data <- 
   tmp %>%
-    filter(date == as.Date("2020-04-09")) %>%
+    filter(date == max(date)) %>%
       mutate(deaths_per_thousand_residents =
                ifelse(geography == "Balance_of_Wayne",
-                      (`reported deaths`[which(geography == "Detroit City")] +
-                       `reported deaths`[which(geography == "Balance_of_Wayne")]) /
+                      (reported_deaths[which(geography == "Detroit City")] +
+                       reported_deaths[which(geography == "Balance_of_Wayne")]) /
                         ((population_2018[which(geography == "Detroit City")] +
                           population_2018[which(geography == "Balance_of_Wayne")])  / 1000),
                       deaths_per_thousand_residents))
@@ -83,7 +83,7 @@ county_map <-
   tm_shape(county_data) +
     tm_borders(col = "grey80") +
   tm_layout(legend.title.color = "white",
-            main.title = "Covid Deaths Per One Thousand Residents\n Through 4-9-2020",
+            main.title = str_c("Covid Deaths Per One Thousand Residents\n Through ", max(county_data$date)),
             main.title.size = 0.9,
             main.title.position = "center",
             frame = FALSE)

@@ -1,0 +1,9 @@
+{
+    "path" : "~/Desktop/covid-mi-counties/graphics",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
