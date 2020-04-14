@@ -122,4 +122,4 @@ county_cases_per_km2_map <-
             main.title.position = "center",
             frame = FALSE)
 
-tmap_save(county_map, "graphics/county_cases_per_km2_map.jpeg")           
+tmap_save(county_cases_per_km2_map, "graphics/county_cases_per_km2_map.jpeg")           
