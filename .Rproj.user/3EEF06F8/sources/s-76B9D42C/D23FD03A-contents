@@ -39,7 +39,7 @@ tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
   st_sf(.) 
 
 
-cases <- ggplot(tmp, aes(x = date, y = cases_per_hundered_thousand_residents)) +
+cases <- ggplot(tmp, aes(x = date, y = cases_per_hundred_thousand_residents)) +
   facet_wrap("geography", nrow = 7) +
     geom_line(col = "blue", size = 1.1) +
       theme(

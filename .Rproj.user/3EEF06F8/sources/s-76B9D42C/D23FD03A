@@ -5,14 +5,14 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "4225624601",
+    "hash" : "222677661",
     "id" : "D23FD03A",
-    "lastKnownWriteTime" : 1586878148,
-    "last_content_update" : 1586878148515,
+    "lastKnownWriteTime" : 1586878379,
+    "last_content_update" : 1586878379229,
     "path" : "~/Desktop/covid-mi-counties/R/load.R",
     "project_path" : "R/load.R",
     "properties" : {
-        "cursorPosition" : "124,88",
+        "cursorPosition" : "125,0",
         "scrollLine" : "99",
         "tempName" : "Untitled1"
     },
