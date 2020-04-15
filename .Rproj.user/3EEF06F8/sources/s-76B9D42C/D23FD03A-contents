@@ -151,3 +151,32 @@ county_april_cases_per_km2_map <-
 tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, delay=100, loop = TRUE)
 
 magick::image_read("graphics/county_april_cases.gif")
+
+
+
+
+
+county_april_deaths <- 
+  tmp %>%
+  mutate(geography = 
+           ifelse(geography == "Detroit City", "Balance_of_Wayne", geography)) %>%
+  group_by(geography, date) %>%
+  summarise_if(is.numeric, sum) 
+
+county_april_deaths_map <- 
+  tm_shape(county_april_deaths) +
+  tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
+  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 90, 100), 
+          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 90", "90 to 100")) +
+  tm_shape(county_april_deaths) +
+  tm_borders(col = "grey80") +
+  tm_layout(legend.title.color = "white",
+            title = str_c("Covid Deaths Per Hundred Thousand Residents By Date"),
+            title.bg.color = "white",
+            main.title.size = 0.9,
+            main.title.position = "center",
+            frame = FALSE) 
+
+tmap_animation(county_april_deaths_map, filename="graphics/county_april_deaths.gif", width=1200, delay=100, loop = TRUE)
+
+magick::image_read("graphics/county_april_deaths.gif")
