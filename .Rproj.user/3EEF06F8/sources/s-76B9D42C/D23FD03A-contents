@@ -3,6 +3,7 @@ library(tigris)
 library(ggplot2)
 library(sf)
 library(tmap)
+library(magick)
 options(scipen = 999)
 
 tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
@@ -123,3 +124,30 @@ county_cases_per_km2_map <-
             frame = FALSE)
 
 tmap_save(county_cases_per_km2_map, "graphics/county_cases_per_km2_map.jpeg")           
+
+
+county_april_cases_per_km2 <- 
+  tmp %>%
+  mutate(geography = 
+           ifelse(geography == "Detroit City", "Balance_of_Wayne", geography)) %>%
+        group_by(geography, date) %>%
+          summarise_if(is.numeric, sum) %>%
+         mutate(cases_per_sq_km = cases / sq_km) 
+
+county_april_cases_per_km2_map <- 
+  tm_shape(county_april_cases_per_km2) +
+  tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
+    tm_fill(col = "cases_per_sq_km", palette = "Blues", breaks = c(-1, 0, .1, 1, 3, 6, 8), 
+            interval.closure = "right", labels = c("0", "up to .1", ".1 to 1", "1 to 3", "3 to 6", "6 to 8")) +
+  tm_shape(county_april_cases_per_km2) +
+    tm_borders(col = "grey80") +
+  tm_layout(legend.title.color = "white",
+            title = str_c("Covid Cases Per Square Kilometer By Date"),
+            title.bg.color = "white",
+            main.title.size = 0.9,
+            main.title.position = "center",
+            frame = FALSE) 
+
+tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, delay=100, loop = TRUE)
+
+magick::image_read("graphics/county_april_cases.gif")
