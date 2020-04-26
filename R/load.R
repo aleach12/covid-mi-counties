@@ -143,13 +143,13 @@ county_april_cases_per_km2_map <-
     tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
   tm_layout(legend.title.color = "white",
-            title = str_c("Covid Cases Per Square Kilometer By Date"),
+            title = str_c("Covid Cases Per Square Kilometer"),
             title.bg.color = "white",
             main.title.size = 0.9,
             main.title.position = "center",
             frame = FALSE) 
 
-#tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
 #magick::image_read("graphics/county_april_cases.gif")
 
@@ -179,6 +179,6 @@ county_april_deaths_map <-
             main.title.position = "center",
             frame = FALSE) 
 
-#tmap_animation(county_april_deaths_map, filename="graphics/county_april_deaths.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+tmap_animation(county_april_deaths_map, filename="graphics/county_april_deaths.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
 #magick::image_read("graphics/county_april_deaths.gif")
