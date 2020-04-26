@@ -149,9 +149,9 @@ county_april_cases_per_km2_map <-
             main.title.position = "center",
             frame = FALSE) 
 
-tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+#tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
-magick::image_read("graphics/county_april_cases.gif")
+#magick::image_read("graphics/county_april_cases.gif")
 
 
 
@@ -179,6 +179,6 @@ county_april_deaths_map <-
             main.title.position = "center",
             frame = FALSE) 
 
-tmap_animation(county_april_deaths_map, filename="graphics/county_april_deaths.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+#tmap_animation(county_april_deaths_map, filename="graphics/county_april_deaths.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
-magick::image_read("graphics/county_april_deaths.gif")
+#magick::image_read("graphics/county_april_deaths.gif")
