@@ -157,6 +157,32 @@ tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_c
 
 
 
+county_april_cases <- 
+  tmp %>%
+  mutate(geography = 
+           ifelse(geography == "Detroit City", "Balance_of_Wayne", geography)) %>%
+  group_by(geography, date) %>%
+  summarise_if(is.numeric, sum) 
+
+county_april_cases_map <- 
+  tm_shape(county_april_deaths) +
+  tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
+  tm_fill(col = "cases_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 30, 100, 500, 1000, 1800, 2000), 
+          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 30", "30 to 100", "100 to 500", "500 to 1000", "1000 to 1800", "1800 to 2000")) +
+  tm_shape(county_april_deaths) +
+  tm_borders(col = "grey80", lwd = 0.01) +
+  tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
+  tm_layout(legend.title.color = "white",
+            title = str_c("Covid Deaths Per Hundred Thousand Residents"),
+            title.bg.color = "white",
+            main.title.size = 0.9,
+            main.title.position = "center",
+            frame = FALSE) 
+
+tmap_animation(county_april_deaths_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+
+
+
 county_april_deaths <- 
   tmp %>%
   mutate(geography = 
@@ -167,8 +193,8 @@ county_april_deaths <-
 county_april_deaths_map <- 
   tm_shape(county_april_deaths) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 110, 196), 
-          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 110", "110 to 196")) +
+  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 130, 204), 
+          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 130", "130 to 204")) +
   tm_shape(county_april_deaths) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
