@@ -181,6 +181,7 @@ county_april_cases_map <-
 
 tmap_animation(county_april_cases_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
+magick::image_read("graphics/county_april_cases.gif")
 
 
 county_april_deaths <- 
