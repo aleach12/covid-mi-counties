@@ -167,8 +167,8 @@ county_april_cases <-
 county_april_cases_map <- 
   tm_shape(county_april_cases) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "cases_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 30, 100, 500, 1000, 1800, 2000), 
-          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 30", "30 to 100", "100 to 500", "500 to 1000", "1000 to 1800", "1800 to 2000")) +
+  tm_fill(col = "cases_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 50, 100, 500, 1000, 1500, 1800, 2000), 
+          interval.closure = "right", labels = c("0", "1 to 50", "50 to 100", "100 to 500", "500 to 1000", "1000 to 1500", "1500 to 1800", "1800 to 2000")) +
   tm_shape(county_april_deaths) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
