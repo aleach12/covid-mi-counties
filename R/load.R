@@ -4,6 +4,7 @@ library(ggplot2)
 library(sf)
 library(tmap)
 library(magick)
+library(pracma)
 options(scipen = 999)
 
 tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
@@ -193,8 +194,8 @@ county_april_deaths <-
 county_april_deaths_map <- 
   tm_shape(county_april_deaths) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 130, 220), 
-          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 130", "130 to 220")) +
+  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 130, 225), 
+          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 130", "130 to 225")) +
   tm_shape(county_april_deaths) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
