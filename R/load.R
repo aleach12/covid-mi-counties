@@ -169,7 +169,7 @@ county_april_cases_map <-
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
   tm_fill(col = "cases_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 50, 100, 500, 1000, 1500, 1800, 2100), 
           interval.closure = "right", labels = c("0", "1 to 50", "50 to 100", "100 to 500", "500 to 1000", "1000 to 1500", "1500 to 1800", "1800 to 2100")) +
-  tm_shape(county_april_deaths) +
+  tm_shape(county_april_cases) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
   tm_layout(legend.title.color = "white",
@@ -181,7 +181,7 @@ county_april_cases_map <-
 
 tmap_animation(county_april_cases_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
-magick::image_read("graphics/county_april_cases.gif")
+#magick::image_read("graphics/county_april_cases.gif")
 
 
 county_april_deaths <- 
@@ -194,8 +194,8 @@ county_april_deaths <-
 county_april_deaths_map <- 
   tm_shape(county_april_deaths) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 130, 225), 
-          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 130", "130 to 225")) +
+  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 130, 230), 
+          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 130", "130 to 230")) +
   tm_shape(county_april_deaths) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
