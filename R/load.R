@@ -35,6 +35,7 @@ tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
                         ifelse(geography == "Balance_of_Wayne", aland - 359279682, aland)),
          cases_per_hundred_thousand_residents = ifelse(cases == 0, 0, cases / (population_2018 / 100000)),
          deaths_per_hundred_thousand_residents = ifelse(reported_deaths == 0, 0, reported_deaths / (population_2018 / 100000)),
+         case_fatality_rate = ifelse(reported_deaths == 0 | cases == 0, 0, (reported_deaths / cases) * 100),
          sq_km = aland / 1000000,
          residents_per_km2 = population_2018 / sq_km,
          death_rate = reported_deaths / population_2018) %>%
@@ -67,92 +68,20 @@ deaths <- ggplot(tmp, aes(x = date, y = deaths_per_hundred_thousand_residents)) 
 
 ggsave(deaths, filename = "graphics/covid-deaths.jpeg", width = 16, height = 10, dpi = 600)
 
-#########
-## creates a map of covid death rates by county
-county_data <- 
-  tmp %>%
-    filter(date == max(date)) %>%
-      mutate(deaths_per_hundred_thousand_residents =
-               ifelse(geography == "Balance_of_Wayne",
-                      (reported_deaths[which(geography == "Detroit City")] +
-                       reported_deaths[which(geography == "Balance_of_Wayne")]) /
-                        ((population_2018[which(geography == "Detroit City")] +
-                          population_2018[which(geography == "Balance_of_Wayne")])  / 100000),
-                      deaths_per_hundred_thousand_residents)) %>%
-  filter(geography != "Detroit City")
+case_fatality_rate <- ggplot(tmp, aes(x = date, y = case_fatality_rate)) +
+  facet_wrap("geography", nrow = 7) +
+  geom_line(col = "blue", size = 1.1) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5),
+    panel.background = element_blank(),
+    panel.grid.major.y = element_line(color = "grey80", linetype = "solid", size = 0.4),
+    panel.grid.major.x = element_blank(),
+    strip.background = element_rect(color = "black", fill = "white", size = 0.8)) +
+  scale_y_continuous(breaks = seq(0, 50, 5), labels = str_c(seq(0, 50, 5),"%")) +
+  ylim(0, 50)
 
-county_map <- 
-  tm_shape(county_data) +
-      tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 10, 20, 30, 44), 
-              interval.closure = "right", labels = c("0", "1 to 10", "10 to 20", "20 to 30", "30 to 44")) +
-  tm_shape(county_data) +
-    tm_borders(col = "grey80") +
-  tm_layout(legend.title.color = "white",
-            main.title = str_c("Covid Deaths Per One Hundred Thousand Residents\n Through ", max(county_data$date)),
-            main.title.size = 0.9,
-            main.title.position = "center",
-            frame = FALSE)
-
-tmap_save(county_map, "graphics/county_map.jpeg")           
-  
-
-#####
-# maps cases per sq kilometer
-#####
-
-county_cases_per_km2 <- 
-  tmp %>%
-  filter(date == max(date)) %>%
-  mutate(cases =
-           ifelse(geography == "Balance_of_Wayne",
-                  (cases[which(geography == "Detroit City")] +
-                  cases[which(geography == "Balance_of_Wayne")]),
-                  cases),
-         sq_km = ifelse(geography == "Balance_of_Wayne", (aland + 359279682) / 1000000, sq_km),
-         cases_per_sq_km = cases / sq_km) %>%
-  filter(geography != "Detroit City")
-
-county_cases_per_km2_map <- 
-  tm_shape(county_cases_per_km2) +
-  tm_fill(col = "cases_per_sq_km", palette = "Blues", breaks = c(-1, 0, .1, 1, 2, 5, 11), 
-          interval.closure = "right", labels = c("0", ">0 to .1", ".1 to 1", "1 to 2", "2 to 5", "5 to 11")) +
-  tm_shape(county_cases_per_km2) +
-  tm_borders(col = "grey80") +
-  tm_layout(legend.title.color = "white",
-            main.title = str_c("Covid Cases Per Square Kilometer\n Through ", max(county_cases_per_km2$date)),
-            main.title.size = 0.9,
-            main.title.position = "center",
-            frame = FALSE)
-
-tmap_save(county_cases_per_km2_map, "graphics/county_cases_per_km2_map.jpeg")           
-
-
-county_april_cases_per_km2 <- 
-  tmp %>%
-  mutate(geography = 
-           ifelse(geography == "Detroit City", "Balance_of_Wayne", geography)) %>%
-        group_by(geography, date) %>%
-          summarise_if(is.numeric, sum) %>%
-         mutate(cases_per_sq_km = cases / sq_km) 
-
-county_april_cases_per_km2_map <- 
-  tm_shape(county_april_cases_per_km2) +
-  tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "cases_per_sq_km", palette = "Blues", breaks = c(-1, 0, .1, 1, 2, 5, 11), 
-          interval.closure = "right", labels = c("0", ">0 to .1", ".1 to 1", "1 to 2", "2 to 5", "5 to 11")) +
-  tm_shape(county_april_cases_per_km2) +
-    tm_borders(col = "grey80", lwd = 0.01) +
-  tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
-  tm_layout(legend.title.color = "white",
-            title = str_c("Covid Cases Per Square Kilometer"),
-            title.bg.color = "white",
-            main.title.size = 0.9,
-            main.title.position = "center",
-            frame = FALSE) 
-
-tmap_animation(county_april_cases_per_km2_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
-
-#magick::image_read("graphics/county_april_cases.gif")
+ggsave(case_fatality_rate, filename = "graphics/case_fatality_rate.jpeg", width = 16, height = 10, dpi = 600)
 
 
 
@@ -167,8 +96,8 @@ county_april_cases <-
 county_april_cases_map <- 
   tm_shape(county_april_cases) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "cases_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 50, 100, 500, 1000, 1500, 1800, 2100), 
-          interval.closure = "right", labels = c("0", "1 to 50", "50 to 100", "100 to 500", "500 to 1000", "1000 to 1500", "1500 to 1800", "1800 to 2100")) +
+  tm_fill(col = "cases_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 50, 100, 250, 500, 1000, 2500), 
+          interval.closure = "right", labels = c("0", "1 to 50", "50 to 100", "100 to 250", "250 to 500", "500 to 1000", "1250 to 2500")) +
   tm_shape(county_april_cases) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
@@ -179,7 +108,7 @@ county_april_cases_map <-
             main.title.position = "center",
             frame = FALSE) 
 
-tmap_animation(county_april_cases_map, filename="graphics/county_april_cases.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+tmap_animation(county_april_cases_map, filename="graphics/county_cases_animation.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
 #magick::image_read("graphics/county_april_cases.gif")
 
@@ -194,8 +123,8 @@ county_april_deaths <-
 county_april_deaths_map <- 
   tm_shape(county_april_deaths) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 1, 5, 10, 30, 60, 130, 230), 
-          interval.closure = "right", labels = c("0", "1", "1 to 5", "5 to 10", "10 to 30", "30 to 60", "60 to 130", "130 to 230")) +
+  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 5, 10, 30, 50, 100, 300), 
+          interval.closure = "right", labels = c("0", "1 to 5", "5 to 10", "10 to 30", "30 to 50", "50 to 100", "100 to 300")) +
   tm_shape(county_april_deaths) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
@@ -206,6 +135,6 @@ county_april_deaths_map <-
             main.title.position = "center",
             frame = FALSE) 
 
-tmap_animation(county_april_deaths_map, filename="graphics/county_april_deaths.gif", width=1200, height = 1500, delay=100, loop = TRUE)
+tmap_animation(county_april_deaths_map, filename="graphics/county_deaths_animation.gif", width=1200, height = 1500, delay=100, loop = TRUE)
 
 #magick::image_read("graphics/county_april_deaths.gif")
