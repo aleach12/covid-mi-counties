@@ -1,4 +1,5 @@
 library(tidyverse)
+library(data.table)
 library(tigris)
 library(ggplot2)
 library(sf)
@@ -83,6 +84,32 @@ case_fatality_rate <- ggplot(tmp, aes(x = date, y = case_fatality_rate)) +
 
 ggsave(case_fatality_rate, filename = "graphics/case_fatality_rate.jpeg", width = 16, height = 10, dpi = 600)
 
+
+#### daily cases for state
+daily_mi <- tmp %>%
+              st_set_geometry(NULL) %>%
+              group_by(date) %>%
+                summarise_if(is.numeric, sum) %>%
+                  ungroup() %>%
+                    mutate(daily_cases = cases - lag(cases),
+                           daily_deaths = reported_deaths - lag(reported_deaths)) %>%
+                      select(date, daily_cases, daily_deaths) %>%
+                  gather(., data, frequency, -date) %>%
+                    mutate(panel = ifelse(data == "daily_cases", "NEW COVID CASES PER DAY IN MICHIGAN",
+                                                                 "NEW COVID DEATHS PER DAY IN MICHIGAN"))
+
+daily_cases_state <- ggplot(daily_mi, aes(x = date, y = frequency)) +
+  facet_wrap("panel", nrow = 2, scales = "free_y") +
+  geom_line(col = "blue", size = 1.1) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5),
+    panel.background = element_blank(),
+    panel.grid.major.y = element_line(color = "grey80", linetype = "solid", size = 0.4),
+    panel.grid.major.x = element_blank(),
+    strip.background = element_rect(color = "black", fill = "white", size = 0.8))
+
+ggsave(daily_cases_state, filename = "graphics/daily_cases_state.jpeg", width = 10, height = 10, dpi = 600)
 
 
 
