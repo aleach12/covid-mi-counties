@@ -6,6 +6,7 @@ library(sf)
 library(tmap)
 library(magick)
 library(pracma)
+library(TTR)
 options(scipen = 999)
 
 tmp <- readxl::read_xlsx("inputs/co-est2019-annres-26.xlsx", skip = 3) %>%
@@ -69,7 +70,7 @@ deaths <- ggplot(tmp, aes(x = date, y = deaths_per_hundred_thousand_residents)) 
 
 ggsave(deaths, filename = "graphics/covid-deaths.jpeg", width = 16, height = 10, dpi = 600)
 
-case_fatality_rate <- ggplot(tmp, aes(x = date, y = case_fatality_rate)) +
+case_fatality_rate <- ggplot(tmp %>% filter(population_2018 > 50000), aes(x = date, y = case_fatality_rate)) +
   facet_wrap("geography", nrow = 7) +
   geom_line(col = "blue", size = 1.1) +
   theme(
@@ -79,8 +80,8 @@ case_fatality_rate <- ggplot(tmp, aes(x = date, y = case_fatality_rate)) +
     panel.grid.major.y = element_line(color = "grey80", linetype = "solid", size = 0.4),
     panel.grid.major.x = element_blank(),
     strip.background = element_rect(color = "black", fill = "white", size = 0.8)) +
-  scale_y_continuous(breaks = seq(0, 50, 5), labels = str_c(seq(0, 50, 5),"%")) +
-  ylim(0, 50)
+  scale_y_continuous(breaks = seq(0, 30, 5), labels = str_c(seq(0, 30, 5),"%")) +
+  ylim(0, 30)
 
 ggsave(case_fatality_rate, filename = "graphics/case_fatality_rate.jpeg", width = 16, height = 10, dpi = 600)
 
@@ -92,11 +93,13 @@ daily_mi <- tmp %>%
                 summarise_if(is.numeric, sum) %>%
                   ungroup() %>%
                     mutate(daily_cases = cases - lag(cases),
-                           daily_deaths = reported_deaths - lag(reported_deaths)) %>%
-                      select(date, daily_cases, daily_deaths) %>%
+                           daily_deaths = reported_deaths - lag(reported_deaths),
+                           smoothed_cases = SMA(daily_cases, n = 3),
+                           smoothed_deaths = SMA(daily_deaths, n = 3)) %>%
+                      select(date, smoothed_cases, smoothed_deaths) %>%
                   gather(., data, frequency, -date) %>%
-                    mutate(panel = ifelse(data == "daily_cases", "NEW COVID CASES PER DAY IN MICHIGAN",
-                                                                 "NEW COVID DEATHS PER DAY IN MICHIGAN"))
+                    mutate(panel = ifelse(data == "smoothed_cases", "THREE DAY MOVING AVERAGE OF NEW COVID CASES IN MICHIGAN",
+                                                                    "THREE DAY MOVING AVERAGE OF NEW COVID DEATHS IN MICHIGAN"))
 
 daily_cases_state <- ggplot(daily_mi, aes(x = date, y = frequency)) +
   facet_wrap("panel", nrow = 2, scales = "free_y") +
@@ -107,7 +110,8 @@ daily_cases_state <- ggplot(daily_mi, aes(x = date, y = frequency)) +
     panel.background = element_blank(),
     panel.grid.major.y = element_line(color = "grey80", linetype = "solid", size = 0.4),
     panel.grid.major.x = element_blank(),
-    strip.background = element_rect(color = "black", fill = "white", size = 0.8))
+    strip.background = element_rect(color = "black", fill = "white", size = 0.8)) +
+  scale_y_continuous(expand = expand_scale(0.1, 0.2))
 
 ggsave(daily_cases_state, filename = "graphics/daily_cases_state.jpeg", width = 10, height = 10, dpi = 600)
 
@@ -150,8 +154,8 @@ county_april_deaths <-
 county_april_deaths_map <- 
   tm_shape(county_april_deaths) +
   tm_facets(along = "date", free.coords = FALSE, nrow = 1, ncol = 1) +
-  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 5, 10, 30, 50, 100, 300), 
-          interval.closure = "right", labels = c("0", "1 to 5", "5 to 10", "10 to 30", "30 to 50", "50 to 100", "100 to 300")) +
+  tm_fill(col = "deaths_per_hundred_thousand_residents", palette = "Blues", breaks = c(-1, 0, 5, 10, 30, 50, 100, 305), 
+          interval.closure = "right", labels = c("0", "1 to 5", "5 to 10", "10 to 30", "30 to 50", "50 to 100", "100 to 305")) +
   tm_shape(county_april_deaths) +
   tm_borders(col = "grey80", lwd = 0.01) +
   tm_credits("Source: Michigan Disease Surveillance System and Vital Records", position = c(0.05, 0), size = 0.4) +
